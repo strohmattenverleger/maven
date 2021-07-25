@@ -32,6 +32,7 @@ import javax.inject.Singleton;
 import org.apache.maven.model.InputLocation;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.ModelBase;
+import org.apache.maven.model.ModelVersion;
 import org.apache.maven.model.Plugin;
 import org.apache.maven.model.PluginContainer;
 import org.apache.maven.model.ReportPlugin;
@@ -201,6 +202,32 @@ public class DefaultInheritanceAssembler
                 if ( initialUrlEndsWithSlash && !path.endsWith( "/" ) )
                 {
                     url.append( '/' );
+                }
+            }
+        }
+
+        @Override
+        protected void mergeModel_ModelVersion( Model target, Model source, boolean sourceDominant,
+                                                Map<Object, Object> context )
+        {
+            String src = source.getModelVersion();
+            if ( src != null )
+            {
+                String tgt = target.getModelVersion();
+                if ( tgt == null )
+                {
+                    target.setModelVersion( src );
+                    target.setLocation( "modelVersion", source.getLocation( "modelVersion" ) );
+                }
+                else
+                {
+                    ModelVersion srcVersion = ModelVersion.parse( src );
+                    ModelVersion tgtVersion = ModelVersion.parse( tgt );
+                    if ( srcVersion.compareTo( tgtVersion ) > 0 )
+                    {
+                        target.setModelVersion( src );
+                        target.setLocation( "modelVersion", source.getLocation( "modelVersion" ) );
+                    }
                 }
             }
         }

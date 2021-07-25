@@ -193,6 +193,20 @@ public class DefaultInheritanceAssemblerTest
             testInheritance( "empty-urls", false );
     }
 
+    @Test
+    public void testDependencyOverrides()
+        throws IOException
+    {
+            testInheritance( "dependency-overrides", false );
+    }
+
+    @Test
+    public void testMoreRecentModelVersionDominant()
+        throws IOException
+    {
+            testInheritance( "more-recent-modelVersion-dominant", false );
+    }
+
     public void testInheritance( String baseName )
         throws IOException
     {

@@ -21,15 +21,19 @@ package org.apache.maven.model.validation;
 
 import org.apache.maven.model.Activation;
 import org.apache.maven.model.ActivationFile;
+import org.apache.maven.model.ArtifactCoordinates;
+import org.apache.maven.model.BasicArtifactCoordinates;
 import org.apache.maven.model.Build;
 import org.apache.maven.model.BuildBase;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.DependencyManagement;
+import org.apache.maven.model.DependencyOverride;
 import org.apache.maven.model.DistributionManagement;
 import org.apache.maven.model.Exclusion;
 import org.apache.maven.model.InputLocation;
 import org.apache.maven.model.InputLocationTracker;
 import org.apache.maven.model.Model;
+import org.apache.maven.model.ModelVersion;
 import org.apache.maven.model.Parent;
 import org.apache.maven.model.Plugin;
 import org.apache.maven.model.PluginExecution;
@@ -49,6 +53,7 @@ import org.codehaus.plexus.util.StringUtils;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -61,6 +66,9 @@ import java.util.regex.Pattern;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
+
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toMap;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
@@ -144,7 +152,7 @@ public class DefaultModelValidator
             // models without a version starting with 3.4.
             validateStringNotEmpty( "modelVersion", problems, Severity.ERROR, Version.V20, m.getModelVersion(), m );
 
-            validateModelVersion( problems, m.getModelVersion(), m, "4.0.0" );
+            validateModelVersion( problems, m.getModelVersion(), m, ModelVersion.V4_0_0, ModelVersion.V4_1_0 );
 
             validateStringNoExpression( "groupId", problems, Severity.WARNING, Version.V20, m.getGroupId(), m );
             if ( parent == null )
@@ -170,6 +178,7 @@ public class DefaultModelValidator
             {
                 validate20RawDependencies( problems, m.getDependencyManagement().getDependencies(),
                                            "dependencyManagement.dependencies.dependency.", EMPTY, request );
+                validateRawDependencyOverrides( problems, m.getDependencyManagement().getDependencyOverrides() );
             }
 
             validateRawRepositories( problems, m.getRepositories(), "repositories.repository.", EMPTY, request );
@@ -400,6 +409,7 @@ public class DefaultModelValidator
         if ( mgmt != null )
         {
             validateEffectiveDependencies( problems, m, mgmt.getDependencies(), true, request );
+            validateEffectiveDependencyOverrides( problems, mgmt.getDependencyOverrides() );
         }
 
         if ( request.getValidationLevel() >= ModelBuildingRequest.VALIDATION_LEVEL_MAVEN_2_0 )
@@ -596,6 +606,14 @@ public class DefaultModelValidator
 
         String prefix = management ? "dependencyManagement.dependencies.dependency." : "dependencies.dependency.";
 
+        Map<Object, DependencyOverride> overridesByOriginal = Collections.emptyMap();
+        if ( !management && m.getDependencyManagement() != null )
+        {
+            overridesByOriginal = m.getDependencyManagement()
+                    .getDependencyOverrides()
+                    .stream()
+                    .collect( toMap( e -> e.getOriginal().getManagementKey(), identity(), ( rhs, lhs ) -> rhs ) );
+        }
         for ( Dependency d : dependencies )
         {
             validateEffectiveDependency( problems, d, management, prefix, request );
@@ -618,6 +636,14 @@ public class DefaultModelValidator
                                   d.getManagementKey(), d, "provided", "compile", "runtime", "test", "system" );
 
                     validateEffectiveModelAgainstDependency( prefix, problems, m, d, request );
+                    if ( overridesByOriginal.containsKey( d.getManagementKey() ) )
+                    {
+                        addViolation( problems, Severity.WARNING, Version.V41,
+                                      prefix.substring( 0, prefix.length() - 1 ),
+                                      d.getManagementKey(),
+                                     "is overridden; replace it with the override to have a more concise model",
+                                      d );
+                    }
                 }
                 else
                 {
@@ -685,7 +711,7 @@ public class DefaultModelValidator
             validateStringNotEmpty( prefix, "type", problems, Severity.ERROR, Version.BASE, d.getType(),
                                     d.getManagementKey(), d );
 
-            validateDependencyVersion( problems, d, prefix );
+            validateVersion( problems, d, prefix );
         }
 
         if ( "system".equals( d.getScope() ) )
@@ -753,13 +779,61 @@ public class DefaultModelValidator
         }
     }
 
-    /**
-     * @since 3.2.4
-     */
-    protected void validateDependencyVersion( ModelProblemCollector problems, Dependency d, String prefix )
+    protected boolean validateVersion( ModelProblemCollector problems, ArtifactCoordinates c, String prefix )
     {
-        validateStringNotEmpty( prefix, "version", problems, Severity.ERROR, Version.BASE, d.getVersion(),
-                                d.getManagementKey(), d );
+        return validateStringNotEmpty( prefix, "version", problems, Severity.ERROR, Version.BASE,
+                                       c.getVersion(), c.getManagementKey(), c );
+    }
+
+    private void validateRawDependencyOverrides( ModelProblemCollector problems, List<DependencyOverride> overrides )
+    {
+        String originalPrefix = "dependencyManagement.dependencyOverrides.dependencyOverride.original";
+        String overridePrefix = "dependencyManagement.dependencyOverrides.dependencyOverride.override";
+
+        for ( DependencyOverride o : overrides )
+        {
+            if ( o.getOriginal() == null )
+            {
+                addViolation( problems, Severity.ERROR, Version.V41, originalPrefix, null, "is missing.", o );
+            }
+            else
+            {
+                validateRawBasicArtifactCoordinates( problems, o.getOriginal(), originalPrefix + "." );
+            }
+            if ( o.getOverride() == null )
+            {
+                addViolation( problems, Severity.ERROR, Version.V41, overridePrefix, null, "is missing.", o );
+            }
+            else
+            {
+                validateRawBasicArtifactCoordinates( problems, o.getOverride(), overridePrefix + "." );
+            }
+        }
+    }
+
+    private void validateRawBasicArtifactCoordinates( ModelProblemCollector problems,
+                                                      BasicArtifactCoordinates coordinates, String prefix )
+    {
+        validateStringNotEmpty( prefix + "groupId", problems, Severity.ERROR, Version.V41, coordinates.getGroupId(),
+                                coordinates );
+        validateStringNotEmpty( prefix + "artifactId", problems, Severity.ERROR, Version.V41,
+                                coordinates.getArtifactId(), coordinates );
+    }
+
+    private void validateEffectiveDependencyOverrides( ModelProblemCollector problems,
+                                                       List<DependencyOverride> overrides )
+    {
+        String overridePrefix = "dependencyManagement.dependencyOverrides.dependencyOverride.override.";
+
+        for ( DependencyOverride e : overrides )
+        {
+            ArtifactCoordinates o = e.getOverride();
+            if ( validateVersion( problems, o, overridePrefix ) )
+            {
+                validateVersion( overridePrefix, "version", problems, Severity.ERROR, Version.V41,
+                                 o.getVersion(), o.getManagementKey(), o );
+            }
+        }
     }
 
     private void validateRawRepositories( ModelProblemCollector problems, List<Repository> repositories, String prefix,
@@ -1178,32 +1252,34 @@ public class DefaultModelValidator
 
     @SuppressWarnings( "checkstyle:parameternumber" )
     private boolean validateModelVersion( ModelProblemCollector problems, String string, InputLocationTracker tracker,
-                                          String... validVersions )
+                                          ModelVersion... validVersions )
     {
         if ( string == null || string.length() <= 0 )
         {
             return true;
         }
 
-        List<String> values = Arrays.asList( validVersions );
+        ModelVersion version = ModelVersion.parse( string );
 
-        if ( values.contains( string ) )
+        List<ModelVersion> values = Arrays.asList( validVersions );
+
+        if ( values.contains( version ) )
         {
             return true;
         }
 
         boolean newerThanAll = true;
         boolean olderThanAll = true;
-        for ( String validValue : validVersions )
+        for ( ModelVersion validValue : validVersions )
         {
-            final int comparison = compareModelVersions( validValue, string );
+            final int comparison = validValue.compareTo( version );
             newerThanAll = newerThanAll && comparison < 0;
             olderThanAll = olderThanAll && comparison > 0;
         }
 
         if ( newerThanAll )
         {
-            addViolation( problems, Severity.FATAL, Version.V20, "modelVersion", null,
+            addViolation( problems, Severity.FATAL, Version.V40, "modelVersion", null,
                           "of '" + string + "' is newer than the versions supported by this version of Maven: " + values
                               + ". Building this project requires a newer version of Maven.", tracker );
 
@@ -1223,34 +1299,6 @@ public class DefaultModelValidator
         }
 
         return false;
-    }
-
-    /**
-     * Compares two model versions.
-     *
-     * @param first the first version.
-     * @param second the second version.
-     * @return negative if the first version is newer than the second version, zero if they are the same or positive if
-     * the second version is the newer.
-     */
-    private static int compareModelVersions( String first, String second )
-    {
-        // we use a dedicated comparator because we control our model version scheme.
-        String[] firstSegments = StringUtils.split( first, "." );
-        String[] secondSegments = StringUtils.split( second, "." );
-        for ( int i = 0; i < Math.min( firstSegments.length, secondSegments.length ); i++ )
-        {
-            int result = Long.valueOf( firstSegments[i] ).compareTo( Long.valueOf( secondSegments[i] ) );
-            if ( result != 0 )
-            {
-                return result;
-            }
-        }
-        if ( firstSegments.length == secondSegments.length )
-        {
-            return 0;
-        }
-        return firstSegments.length > secondSegments.length ? -1 : 1;
     }
 
     @SuppressWarnings( "checkstyle:parameternumber" )

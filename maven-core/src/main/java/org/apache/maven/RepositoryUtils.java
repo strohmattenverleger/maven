@@ -44,6 +44,7 @@ import org.eclipse.aether.artifact.DefaultArtifactType;
 import org.eclipse.aether.graph.Dependency;
 import org.eclipse.aether.graph.DependencyFilter;
 import org.eclipse.aether.graph.DependencyNode;
+import org.eclipse.aether.graph.DependencyOverride;
 import org.eclipse.aether.graph.Exclusion;
 import org.eclipse.aether.repository.Authentication;
 import org.eclipse.aether.repository.Proxy;
@@ -318,6 +319,29 @@ public class RepositoryUtils
                                                 ? dependency.isOptional()
                                                 : null,
                                             exclusions );
+    }
+
+    public static DependencyOverride toDependencyOverride( org.apache.maven.model.DependencyOverride dependencyOverride,
+                                                           ArtifactTypeRegistry stereotypes )
+    {
+        DependencyOverride result = new DependencyOverride(
+                new DefaultArtifact(
+                        dependencyOverride.getOriginal().getGroupId(),
+                        dependencyOverride.getOriginal().getArtifactId(),
+                        dependencyOverride.getOriginal().getClassifier(),
+                        dependencyOverride.getOriginal().getType(),
+                        null
+                ),
+                new DefaultArtifact(
+                        dependencyOverride.getOverride().getGroupId(),
+                        dependencyOverride.getOverride().getArtifactId(),
+                        dependencyOverride.getOverride().getClassifier(),
+                        dependencyOverride.getOverride().getType(),
+                        dependencyOverride.getOverride().getVersion()
+                )
+        );
+
+        return result;
     }
 
     private static Exclusion toExclusion( org.apache.maven.model.Exclusion exclusion )

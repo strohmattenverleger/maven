@@ -26,6 +26,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.maven.model.ArtifactCoordinates;
+import org.apache.maven.model.BasicArtifactCoordinates;
 import org.apache.maven.model.DependencyManagement;
 import org.apache.maven.model.DistributionManagement;
 import org.apache.maven.model.License;
@@ -40,6 +42,7 @@ import org.eclipse.aether.artifact.ArtifactTypeRegistry;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.artifact.DefaultArtifactType;
 import org.eclipse.aether.graph.Dependency;
+import org.eclipse.aether.graph.DependencyOverride;
 import org.eclipse.aether.graph.Exclusion;
 import org.eclipse.aether.resolution.ArtifactDescriptorResult;
 
@@ -71,6 +74,10 @@ public class ArtifactDescriptorReaderDelegate
             for ( org.apache.maven.model.Dependency dependency : mgmt.getDependencies() )
             {
                 result.addManagedDependency( convert( dependency, stereotypes ) );
+            }
+            for ( org.apache.maven.model.DependencyOverride dependencyOverride : mgmt.getDependencyOverrides() )
+            {
+                result.addDependencyOverride( convert( dependencyOverride, stereotypes ) );
             }
         }
 
@@ -129,6 +136,37 @@ public class ArtifactDescriptorReaderDelegate
                                                 ? dependency.isOptional()
                                                 : null,
                                             exclusions );
+    }
+
+    private DependencyOverride convert( org.apache.maven.model.DependencyOverride dependencyOverride,
+                                        ArtifactTypeRegistry stereotypes )
+    {
+        Artifact original = convert( dependencyOverride.getOriginal(), stereotypes );
+        Artifact override = convert( dependencyOverride.getOverride(), stereotypes );
+        return new DependencyOverride( original, override );
+    }
+
+    private Artifact convert( BasicArtifactCoordinates coordinates, ArtifactTypeRegistry stereotypes )
+    {
+        ArtifactType stereotype = stereotypes.get( coordinates.getType() );
+        if ( stereotype == null )
+        {
+            stereotype = new DefaultArtifactType( coordinates.getType() );
+        }
+        return new DefaultArtifact( coordinates.getGroupId(), coordinates.getArtifactId(), coordinates.getClassifier(),
+                                    coordinates.getType(), null, Collections.emptyMap(), stereotype );
+    }
+
+    private Artifact convert( ArtifactCoordinates coordinates, ArtifactTypeRegistry stereotypes )
+    {
+        ArtifactType stereotype = stereotypes.get( coordinates.getType() );
+        if ( stereotype == null )
+        {
+            stereotype = new DefaultArtifactType( coordinates.getType() );
+        }
+        return new DefaultArtifact( coordinates.getGroupId(), coordinates.getArtifactId(), coordinates.getClassifier(),
+                                    coordinates.getType(), coordinates.getVersion(), Collections.emptyMap(),
+                                    stereotype );
     }
 
     private Exclusion convert( org.apache.maven.model.Exclusion exclusion )

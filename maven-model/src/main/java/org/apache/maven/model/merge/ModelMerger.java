@@ -35,6 +35,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.apache.maven.model.Activation;
+import org.apache.maven.model.ArtifactCoordinates;
+import org.apache.maven.model.BasicArtifactCoordinates;
 import org.apache.maven.model.Build;
 import org.apache.maven.model.BuildBase;
 import org.apache.maven.model.CiManagement;
@@ -42,6 +44,7 @@ import org.apache.maven.model.ConfigurationContainer;
 import org.apache.maven.model.Contributor;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.DependencyManagement;
+import org.apache.maven.model.DependencyOverride;
 import org.apache.maven.model.DeploymentRepository;
 import org.apache.maven.model.Developer;
 import org.apache.maven.model.DistributionManagement;
@@ -1106,6 +1109,109 @@ public class ModelMerger
         }
     }
 
+    @SuppressWarnings( "checkstyle:avoidnestedblocks" )
+    protected void mergeDependencyOverride( DependencyOverride target, DependencyOverride source,
+                                            boolean sourceDominant, Map<Object, Object> context )
+    {
+        {
+            BasicArtifactCoordinates src = source.getOriginal();
+            if ( src != null )
+            {
+                BasicArtifactCoordinates trg = target.getOriginal();
+                if ( trg == null )
+                {
+                    target.setOriginal( src );
+                    target.setLocation( "original", source.getLocation( "original" ) );
+                }
+                else
+                {
+                    mergeBasicArtifactCoordinates( trg, src, sourceDominant, context );
+                }
+            }
+        }
+        {
+            ArtifactCoordinates src = source.getOverride();
+            if ( src != null )
+            {
+                ArtifactCoordinates trg = target.getOverride();
+                if ( trg == null )
+                {
+                    target.setOverride( src );
+                    target.setLocation( "override", source.getLocation( "override" ) );
+                }
+                else
+                {
+                    mergeArtifactCoordinates( trg, src, sourceDominant, context );
+                }
+            }
+        }
+    }
+
+    @SuppressWarnings( "checkstyle:avoidnestedblocks" )
+    protected void mergeBasicArtifactCoordinates( BasicArtifactCoordinates target, BasicArtifactCoordinates source,
+                                                  boolean sourceDominant, Map<Object, Object> context )
+    {
+        {
+            String src = source.getGroupId();
+            if ( src != null )
+            {
+                if ( sourceDominant || target.getGroupId() == null )
+                {
+                    target.setGroupId( src );
+                    target.setLocation( "groupId", source.getLocation( "groupId" ) );
+                }
+            }
+        }
+        {
+            String src = source.getArtifactId();
+            if ( src != null )
+            {
+                if ( sourceDominant || target.getArtifactId() == null )
+                {
+                    target.setArtifactId( src );
+                    target.setLocation( "artifactId", source.getLocation( "artifactId" ) );
+                }
+            }
+        }
+        {
+            String src = source.getType();
+            if ( src != null )
+            {
+                if ( sourceDominant || target.getType() == null )
+                {
+                    target.setType( src );
+                    target.setLocation( "type", source.getLocation( "type" ) );
+                }
+            }
+        }
+        {
+            String src = source.getClassifier();
+            if ( src != null )
+            {
+                if ( sourceDominant || target.getClassifier() == null )
+                {
+                    target.setClassifier( src );
+                    target.setLocation( "classifier", source.getLocation( "classifier" ) );
+                }
+            }
+        }
+    }
+
+    protected void mergeArtifactCoordinates( ArtifactCoordinates target, ArtifactCoordinates source,
+                                             boolean sourceDominant, Map<Object, Object> context )
+    {
+        mergeBasicArtifactCoordinates( target, source, sourceDominant, context );
+        String src = source.getVersion();
+        if ( src != null )
+        {
+            if ( sourceDominant || target.getVersion() == null )
+            {
+                target.setVersion( src );
+                target.setLocation( "version", source.getLocation( "version" ) );
+            }
+        }
+    }
+
     protected void mergeReporting( Reporting target, Reporting source, boolean sourceDominant,
                                    Map<Object, Object> context )
     {
@@ -1240,6 +1346,7 @@ public class ModelMerger
                                               boolean sourceDominant, Map<Object, Object> context )
     {
         mergeDependencyManagement_Dependencies( target, source, sourceDominant, context );
+        mergeDependencyManagement_DependencyOverrides( target, source, sourceDominant, context );
     }
 
     protected void mergeDependencyManagement_Dependencies( DependencyManagement target, DependencyManagement source,
@@ -1247,6 +1354,14 @@ public class ModelMerger
     {
         target.setDependencies( merge( target.getDependencies(), source.getDependencies(),
                                        sourceDominant, getDependencyKey() ) );
+    }
+
+    protected void mergeDependencyManagement_DependencyOverrides( DependencyManagement target,
+                                                                  DependencyManagement source, boolean sourceDominant,
+                                                                  Map<Object, Object> context )
+    {
+        target.setDependencyOverrides( merge( target.getDependencyOverrides(), source.getDependencyOverrides(),
+                                              sourceDominant, getDependencyOverrideKey() ) );
     }
 
     protected void mergeParent( Parent target, Parent source, boolean sourceDominant, Map<Object, Object> context )
@@ -2562,6 +2677,16 @@ public class ModelMerger
     protected KeyComputer<Dependency> getDependencyKey()
     {
         return d -> d;
+    }
+
+    protected KeyComputer<DependencyOverride> getDependencyOverrideKey()
+    {
+        return o -> o;
+    }
+
+    protected KeyComputer<ArtifactCoordinates> getArtifactCoordinatesKey()
+    {
+        return c -> c;
     }
 
     protected KeyComputer<Plugin> getPluginKey()

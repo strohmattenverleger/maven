@@ -29,6 +29,7 @@ import javax.inject.Singleton;
 
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.DependencyManagement;
+import org.apache.maven.model.DependencyOverride;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.building.ModelBuildingRequest;
 import org.apache.maven.model.building.ModelProblemCollector;
@@ -51,6 +52,7 @@ public class DefaultDependencyManagementImporter
         if ( sources != null && !sources.isEmpty() )
         {
             Map<String, Dependency> dependencies = new LinkedHashMap<>();
+            Map<String, DependencyOverride> overrides = new LinkedHashMap<>();
 
             DependencyManagement depMgmt = target.getDependencyManagement();
 
@@ -59,6 +61,10 @@ public class DefaultDependencyManagementImporter
                 for ( Dependency dependency : depMgmt.getDependencies() )
                 {
                     dependencies.put( dependency.getManagementKey(), dependency );
+                }
+                for ( DependencyOverride override : depMgmt.getDependencyOverrides() )
+                {
+                    overrides.put( override.getOriginal().getManagementKey(), override );
                 }
             }
             else
@@ -77,9 +83,14 @@ public class DefaultDependencyManagementImporter
                         dependencies.put( key, dependency );
                     }
                 }
+                for ( DependencyOverride override : source.getDependencyOverrides() )
+                {
+                    overrides.putIfAbsent( override.getOriginal().getManagementKey(), override );
+                }
             }
 
             depMgmt.setDependencies( new ArrayList<>( dependencies.values() ) );
+            depMgmt.setDependencyOverrides( new ArrayList<>( overrides.values() ) );
         }
     }
 

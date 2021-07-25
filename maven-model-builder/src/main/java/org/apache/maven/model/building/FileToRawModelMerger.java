@@ -27,6 +27,7 @@ import org.apache.maven.model.BuildBase;
 import org.apache.maven.model.CiManagement;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.DependencyManagement;
+import org.apache.maven.model.DependencyOverride;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.ModelBase;
 import org.apache.maven.model.Plugin;
@@ -82,6 +83,16 @@ class FileToRawModelMerger extends ModelMerger
         Iterator<Dependency> sourceIterator = source.getDependencies().iterator();
         target.getDependencies().forEach( t -> mergeDependency( t, sourceIterator.next(), sourceDominant,
                                                                          context ) );
+    }
+
+    @Override
+    protected void mergeDependencyManagement_DependencyOverrides( DependencyManagement target,
+                                                                  DependencyManagement source,
+                                                                  boolean sourceDominant, Map<Object, Object> context )
+    {
+        Iterator<DependencyOverride> sourceIterator = source.getDependencyOverrides().iterator();
+        target.getDependencyOverrides().forEach( t -> mergeDependencyOverride( t, sourceIterator.next(),
+                                                                               sourceDominant, context ) );
     }
 
     @Override

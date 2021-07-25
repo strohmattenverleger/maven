@@ -144,6 +144,30 @@ public class DefaultModelValidatorTest
         assertTrue( result.getFatals().get( 0 ).contains( "modelVersion" ) );
     }
 
+        @Test
+    public void testGoodModelVersion400()
+        throws Exception
+    {
+        SimpleProblemCollector result =
+            validateRaw( "good-modelVersion-4.0.0.xml", ModelBuildingRequest.VALIDATION_LEVEL_STRICT );
+
+        assertViolations( result, 0, 0, 0 );
+    }
+
+    @Test
+    public void testGoodModelVersions()
+        throws Exception
+    {
+        SimpleProblemCollector result;
+
+        result = validateRaw( "good-modelVersion-4.0.0.xml", ModelBuildingRequest.VALIDATION_LEVEL_STRICT );
+        assertViolations( result, 0, 0, 0 );
+
+        result = validateRaw( "good-modelVersion-4.1.0.xml", ModelBuildingRequest.VALIDATION_LEVEL_STRICT );
+        assertViolations( result, 0, 0, 0 );
+    }
+
+
     @Test
     public void testMissingArtifactId()
         throws Exception

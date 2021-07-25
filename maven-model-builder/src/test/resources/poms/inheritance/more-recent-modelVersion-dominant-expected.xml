@@ -1,3 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
 <!--
 Licensed to the Apache Software Foundation (ASF) under one
 or more contributor license agreements.  See the NOTICE file
@@ -7,7 +9,7 @@ to you under the Apache License, Version 2.0 (the
 "License"); you may not use this file except in compliance
 with the License.  You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+  http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing,
 software distributed under the License is distributed on an
@@ -18,8 +20,13 @@ under the License.
 -->
 
 <project>
-    <modelVersion>4.1.1</modelVersion>
-    <groupId>tests.project</groupId>
-    <artifactId>future-model-version</artifactId>
+  <modelVersion>4.1.0</modelVersion>
+  <parent>
+    <groupId>inheritance</groupId>
+    <artifactId>parent</artifactId>
     <version>1</version>
+  </parent>
+  <groupId>inheritance</groupId>
+  <artifactId>child</artifactId>
+  <version>1</version>
 </project>

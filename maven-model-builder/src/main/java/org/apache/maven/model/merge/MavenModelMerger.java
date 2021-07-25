@@ -26,9 +26,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.maven.model.ArtifactCoordinates;
 import org.apache.maven.model.BuildBase;
 import org.apache.maven.model.CiManagement;
 import org.apache.maven.model.Dependency;
+import org.apache.maven.model.DependencyOverride;
 import org.apache.maven.model.DeploymentRepository;
 import org.apache.maven.model.DistributionManagement;
 import org.apache.maven.model.Exclusion;
@@ -610,6 +612,12 @@ public class MavenModelMerger
     }
 
     @Override
+    protected Object getDependencyKey( Dependency dependency )
+    {
+        return super.getDependencyKey( dependency );
+    }
+
+    @Override
     protected void mergeReportPlugin_ReportSets( ReportPlugin target, ReportPlugin source, boolean sourceDominant,
                                                  Map<Object, Object> context )
     {
@@ -647,6 +655,18 @@ public class MavenModelMerger
     protected KeyComputer<Dependency> getDependencyKey()
     {
         return Dependency::getManagementKey;
+    }
+
+    @Override
+    protected KeyComputer<DependencyOverride> getDependencyOverrideKey()
+    {
+        return d -> d.getOriginal().getManagementKey();
+    }
+
+    @Override
+    protected KeyComputer<ArtifactCoordinates> getArtifactCoordinatesKey()
+    {
+        return ArtifactCoordinates::getManagementKey;
     }
 
     @Override

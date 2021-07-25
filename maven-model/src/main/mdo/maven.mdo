@@ -44,9 +44,7 @@
   |
 -->
 <model xmlns="http://codehaus-plexus.github.io/MODELLO/2.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://codehaus-plexus.github.io/MODELLO/2.0.0 https://codehaus-plexus.github.io/modello/xsd/modello-2.0.0.xsd"
-  xml.namespace="http://maven.apache.org/POM/${version}"
-  xml.schemaLocation="https://maven.apache.org/xsd/maven-${version}.xsd">
+  xsi:schemaLocation="http://codehaus-plexus.github.io/MODELLO/2.0.0 https://codehaus-plexus.github.io/modello/xsd/modello-2.0.0.xsd">
   <id>maven</id>
   <name>Maven</name>
   <description>
@@ -56,6 +54,7 @@
     <ul>
       <li><a href="https://maven.apache.org/xsd/maven-v3_0_0.xsd">https://maven.apache.org/xsd/maven-v3_0_0.xsd</a> for Maven 1.1.</li>
       <li><a href="https://maven.apache.org/xsd/maven-4.0.0.xsd">https://maven.apache.org/xsd/maven-4.0.0.xsd</a> for Maven 2.0.</li>
+      <li><a href="https://maven.apache.org/xsd/maven-4.1.0.xsd">https://maven.apache.org/xsd/maven-4.1.0.xsd</a> for Maven 4.0.</li>
     </ul>
     ]]>
   </description>
@@ -974,6 +973,7 @@
     </class>
     <class java.clone="deep">
       <name>Dependency</name>
+      <superClass>ArtifactCoordinates</superClass>
       <version>3.0.0+</version>
       <description>
         <![CDATA[
@@ -982,74 +982,6 @@
         ]]>
       </description>
       <fields>
-        <field>
-          <name>groupId</name>
-          <version>3.0.0+</version>
-          <required>true</required>
-          <description>
-            <![CDATA[
-            The project group that produced the dependency, e.g.
-            <code>org.apache.maven</code>.
-            ]]>
-          </description>
-          <type>String</type>
-        </field>
-        <field>
-          <name>artifactId</name>
-          <version>3.0.0+</version>
-          <required>true</required>
-          <description>
-            <![CDATA[
-            The unique id for an artifact produced by the project group, e.g.
-            <code>maven-artifact</code>.
-            ]]>
-          </description>
-          <type>String</type>
-        </field>
-        <field>
-          <name>version</name>
-          <version>3.0.0+</version>
-          <description>
-            <![CDATA[
-            The version of the dependency, e.g. <code>3.2.1</code>. In Maven 2, this can also be
-            specified as a range of versions.
-            ]]>
-          </description>
-          <type>String</type>
-        </field>
-        <field>
-          <name>type</name>
-          <version>4.0.0+</version>
-          <description>
-            <![CDATA[
-            The type of dependency, that will be mapped to a file extension, an optional classifier, and a few other attributes.
-            Some examples are <code>jar</code>, <code>war</code>, <code>ejb-client</code>
-            and <code>test-jar</code>: see <a href="../maven-core/artifact-handlers.html">default
-            artifact handlers</a> for a list. New types can be defined by extensions, so this is not a complete list.
-            ]]>
-          </description>
-          <type>String</type>
-          <defaultValue>jar</defaultValue>
-        </field>
-        <field>
-          <name>classifier</name>
-          <version>4.0.0+</version>
-          <description>
-            <![CDATA[
-            The classifier of the dependency. It is appended to
-            the filename after the version. This allows:
-            <ul>
-            <li>referring to attached artifact, for example <code>sources</code> and <code>javadoc</code>:
-            see <a href="../maven-core/artifact-handlers.html">default artifact handlers</a> for a list,</li>
-            <li>distinguishing two artifacts
-            that belong to the same POM but were built differently.
-            For example, <code>jdk14</code> and <code>jdk15</code>.</li>
-            </ul>
-            ]]>
-          </description>
-          <type>String</type>
-          <required>false</required>
-        </field>
         <field>
           <name>scope</name>
           <version>4.0.0+</version>
@@ -1125,25 +1057,93 @@
     {
         this.optional = String.valueOf( optional );
     }
-
-    /**
-     * @see java.lang.Object#toString()
-     */
-    public String toString()
-    {
-        return "Dependency {groupId=" + groupId + ", artifactId=" + artifactId + ", version=" + version + ", type=" + type + "}";
-    }
             ]]>
           </code>
         </codeSegment>
+      </codeSegments>
+    </class>
+    <class java.clone="deep">
+      <name>BasicArtifactCoordinates</name>
+      <version>3.0.0+</version>
+      <description>
+        <![CDATA[
+        This class contains the basic coordinates of an artifact, i.e. all coordinates, but no version.
+        ]]>
+      </description>
+      <fields>
+        <field>
+          <name>groupId</name>
+          <version>3.0.0+</version>
+          <required>true</required>
+          <description>
+            <![CDATA[
+            The project group that produced the artifact, e.g.
+            <code>org.apache.maven</code>.
+            ]]>
+          </description>
+          <type>String</type>
+        </field>
+        <field>
+          <name>artifactId</name>
+          <version>3.0.0+</version>
+          <required>true</required>
+          <description>
+            <![CDATA[
+            The unique id for an artifact produced by the project group, e.g.
+            <code>maven-artifact</code>.
+            ]]>
+          </description>
+          <type>String</type>
+        </field>
+        <field>
+          <name>type</name>
+          <version>4.0.0+</version>
+          <description>
+            <![CDATA[
+            The type of artifact, that will be mapped to a file extension, an optional classifier, and a few other attributes.
+            Some examples are <code>jar</code>, <code>war</code>, <code>ejb-client</code>
+            and <code>test-jar</code>: see <a href="../maven-core/artifact-handlers.html">default
+            artifact handlers</a> for a list. New types can be defined by extensions, so this is not a complete list.
+            ]]>
+          </description>
+          <type>String</type>
+          <defaultValue>jar</defaultValue>
+        </field>
+        <field>
+          <name>classifier</name>
+          <version>4.0.0+</version>
+          <description>
+            <![CDATA[
+            The classifier of the artifact. It is appended to
+            the filename after the version. This allows:
+            <ul>
+            <li>referring to attached artifact, for example <code>sources</code> and <code>javadoc</code>:
+            see <a href="../maven-core/artifact-handlers.html">default artifact handlers</a> for a list,</li>
+            <li>distinguishing two artifacts
+            that belong to the same POM but were built differently.
+            For example, <code>jdk14</code> and <code>jdk15</code>.</li>
+            </ul>
+            ]]>
+          </description>
+          <type>String</type>
+          <required>false</required>
+        </field>
+      </fields>
+      <codeSegments>
         <codeSegment>
           <version>4.0.0+</version>
           <code>
             <![CDATA[
+    @Override
+    public String toString()
+    {
+        return getClass().getSimpleName() + " {groupId=" + groupId + ", artifactId=" + artifactId + ", type=" + type + (classifier != null ? ", classifier=" + classifier : "") + "}";
+    }
+
     private String managementKey;
 
     /**
-     * @return the management key as <code>groupId:artifactId:type</code>
+     * @return the management key as <code>groupId:artifactId:type[:classifier]</code>
      */
     public String getManagementKey()
     {
@@ -1160,6 +1160,93 @@
     public void clearManagementKey()
     {
         managementKey = null;
+    }
+            ]]>
+          </code>
+        </codeSegment>
+      </codeSegments>
+    </class>
+    <class java.clone="deep">
+      <name>ArtifactCoordinates</name>
+      <superClass>BasicArtifactCoordinates</superClass>
+      <version>3.0.0+</version>
+      <description>
+        <![CDATA[
+        This class contains the coordinates of an artifact, including its version.
+        ]]>
+      </description>
+      <fields>
+        <field>
+          <name>version</name>
+          <version>3.0.0+</version>
+          <description>
+            <![CDATA[
+            The version of the artifact, e.g. <code>3.2.1</code>. In Maven 2, this can also be
+            specified as a range of versions.
+            ]]>
+          </description>
+          <type>String</type>
+        </field>
+      </fields>
+      <codeSegments>
+        <codeSegment>
+          <version>4.0.0+</version>
+          <code>
+            <![CDATA[
+    @Override
+    public String toString()
+    {
+        return getClass().getSimpleName() + " {groupId=" + getGroupId() + ", artifactId=" + getArtifactId() + ", version=" + version + ", type=" + getType() + (getClassifier() != null ? ", classifier=" + getClassifier() : "") + "}";
+    }
+            ]]>
+          </code>
+        </codeSegment>
+      </codeSegments>
+    </class>
+    <class java.clone="deep">
+      <name>DependencyOverride</name>
+      <version>4.1.0+</version>
+      <description>
+        <![CDATA[
+        The <code>&lt;dependencyOverride&gt;</code> element contains information of a dependency override.
+        ]]>
+      </description>
+      <fields>
+        <field>
+          <name>original</name>
+          <version>4.1.0+</version>
+          <required>true</required>
+          <description>
+            <![CDATA[
+            The original coordinates of the dependency to override.
+            ]]>
+          </description>
+          <association>
+            <type>BasicArtifactCoordinates</type>
+          </association>
+        </field>
+        <field>
+          <name>override</name>
+          <version>4.1.0+</version>
+          <required>true</required>
+          <description>
+            <![CDATA[
+            The new dependency. Dependency management information must exist.
+            ]]>
+          </description>
+          <association>
+            <type>ArtifactCoordinates</type>
+          </association>
+        </field>
+      </fields>
+      <codeSegments>
+        <codeSegment>
+          <version>4.1.0+</version>
+          <code>
+            <![CDATA[
+    public String toString()
+    {
+        return "DependencyOverride {original=" + original + ", override=" + override + "}";
     }
             ]]>
           </code>
@@ -2446,6 +2533,17 @@
             particular dependency.</description>
           <association>
             <type>Dependency</type>
+            <multiplicity>*</multiplicity>
+          </association>
+        </field>
+        <field>
+          <name>dependencyOverrides</name>
+          <version>4.1.0+</version>
+          <description>Any dependency coordinates specified here will be overridden with the designated coordinates.
+            This enables the replacement of dependencies entirely. The replacements will be resolved via the default
+            resolution process.</description>
+          <association>
+            <type>DependencyOverride</type>
             <multiplicity>*</multiplicity>
           </association>
         </field>

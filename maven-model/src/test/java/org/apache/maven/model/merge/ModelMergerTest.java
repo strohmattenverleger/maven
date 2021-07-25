@@ -1,9 +1,5 @@
 package org.apache.maven.model.merge;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.is;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -28,9 +24,12 @@ import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import org.apache.maven.model.ArtifactCoordinates;
 import org.apache.maven.model.Build;
 import org.apache.maven.model.Contributor;
 import org.apache.maven.model.Dependency;
+import org.apache.maven.model.DependencyManagement;
+import org.apache.maven.model.DependencyOverride;
 import org.apache.maven.model.Developer;
 import org.apache.maven.model.License;
 import org.apache.maven.model.MailingList;
@@ -41,6 +40,10 @@ import org.apache.maven.model.Profile;
 import org.apache.maven.model.ReportSet;
 import org.apache.maven.model.Repository;
 import org.junit.jupiter.api.Test;
+
+import static java.util.Arrays.*;
+import static org.hamcrest.MatcherAssert.*;
+import static org.hamcrest.Matchers.*;
 
 /**
  * ModelMerger is based on same instances, subclasses should override KeyComputer per type
@@ -103,6 +106,84 @@ public class ModelMergerTest
         modelMerger.merge( target, source, true, null );
 
         assertThat( target.getDependencies(), contains( dependency ) );
+    }
+
+    @Test
+    public void mergeSameDependencyOverrides()
+    {
+        ArtifactCoordinates original = new ArtifactCoordinates();
+        original.setGroupId( "G" );
+        original.setArtifactId( "A" );
+        original.setType( "T" );
+        original.setClassifier( "C" );
+
+        ArtifactCoordinates override = new ArtifactCoordinates();
+        override.setGroupId( "G" );
+        override.setArtifactId( "A" );
+        override.setType( "T" );
+
+        DependencyOverride do1 = new DependencyOverride();
+        do1.setOriginal( original );
+        do1.setOverride( override );
+
+        Model target = new Model();
+        target.setDependencyManagement( new DependencyManagement() );
+        target.getDependencyManagement().setDependencyOverrides( asList( do1 ) );
+
+        Model source = new Model();
+        source.setDependencyManagement( new DependencyManagement() );
+        source.getDependencyManagement().setDependencyOverrides( asList( do1 ) );
+
+        modelMerger.merge( target, source, true, null );
+
+        assertThat( target.getDependencyManagement().getDependencyOverrides(), equalTo( asList( do1 ) ) );
+    }
+
+    @Test
+    public void mergeDependencyOverrides()
+    {
+        ArtifactCoordinates original = new ArtifactCoordinates();
+        original.setGroupId( "G" );
+        original.setArtifactId( "A" );
+        original.setType( "T" );
+        original.setClassifier( "C" );
+
+        ArtifactCoordinates override = new ArtifactCoordinates();
+        override.setGroupId( "G" );
+        override.setArtifactId( "A" );
+        override.setType( "T" );
+
+        DependencyOverride do1 = new DependencyOverride();
+        do1.setOriginal( original );
+        do1.setOverride( override );
+
+        DependencyOverride do2 = new DependencyOverride();
+        do2.setOriginal( original );
+        do2.setOverride( override );
+
+        Model target = new Model();
+        target.setDependencyManagement( new DependencyManagement() );
+        target.getDependencyManagement().setDependencyOverrides( Arrays.<DependencyOverride>asList() );
+
+        Model source = new Model();
+        source.setDependencyManagement( new DependencyManagement() );
+        source.getDependencyManagement().setDependencyOverrides( asList( do1, do2 ) );
+
+        modelMerger.merge( target, source, true, null );
+
+        assertThat( target.getDependencyManagement().getDependencyOverrides(), equalTo( asList( do1, do2 ) ) );
+
+        target = new Model();
+        target.setDependencyManagement( new DependencyManagement() );
+        target.getDependencyManagement().setDependencyOverrides( Arrays.<DependencyOverride>asList() );
+
+        source = new Model();
+        source.setDependencyManagement( new DependencyManagement() );
+        source.getDependencyManagement().setDependencyOverrides( asList( do1, do2 ) );
+
+        modelMerger.merge( target, source, false, null );
+
+        assertThat( target.getDependencyManagement().getDependencyOverrides(), equalTo( asList( do1, do2 ) ) );
     }
 
     @Test

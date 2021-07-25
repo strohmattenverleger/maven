@@ -17,9 +17,14 @@ specific language governing permissions and limitations
 under the License.
 -->
 
-<project>
-    <modelVersion>4.1.1</modelVersion>
-    <groupId>tests.project</groupId>
-    <artifactId>future-model-version</artifactId>
-    <version>1</version>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example.group</groupId>
+  <artifactId>good-model-version</artifactId>
+  <version>1</version>
+
+  <description>
+    This will test if the model version 4.0.0 is still allowed, even though 4.1.0 is the latest supported model version.
+  </description>
 </project>

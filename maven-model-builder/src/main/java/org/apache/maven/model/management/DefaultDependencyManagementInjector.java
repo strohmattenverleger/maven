@@ -27,13 +27,18 @@ import java.util.Map;
 import javax.inject.Named;
 import javax.inject.Singleton;
 
+import org.apache.maven.model.ArtifactCoordinates;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.DependencyManagement;
+import org.apache.maven.model.DependencyOverride;
 import org.apache.maven.model.Exclusion;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.building.ModelBuildingRequest;
 import org.apache.maven.model.building.ModelProblemCollector;
 import org.apache.maven.model.merge.MavenModelMerger;
+
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toMap;
 
 /**
  * Handles injection of dependency management into the model.
@@ -76,6 +81,11 @@ public class DefaultDependencyManagementInjector
                     dependencies.put( key, dependency );
                 }
 
+                Map<Object, ArtifactCoordinates> overrides = dependencyManagement.getDependencyOverrides()
+                        .stream()
+                        .map( DependencyOverride::getOverride )
+                        .collect( toMap( ArtifactCoordinates::getManagementKey, identity() ) );
+
                 for ( Dependency managedDependency : dependencyManagement.getDependencies() )
                 {
                     Object key = getDependencyKey().apply( managedDependency );
@@ -83,6 +93,12 @@ public class DefaultDependencyManagementInjector
                     if ( dependency != null )
                     {
                         mergeDependency( dependency, managedDependency, false, context );
+                    }
+
+                    ArtifactCoordinates override = overrides.get( key );
+                    if ( override != null )
+                    {
+                        override.setVersion( managedDependency.getVersion() );
                     }
                 }
             }

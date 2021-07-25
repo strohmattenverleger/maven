@@ -33,6 +33,7 @@ import org.apache.maven.RepositoryUtils;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.DependencyManagement;
+import org.apache.maven.model.DependencyOverride;
 import org.apache.maven.model.Exclusion;
 import org.codehaus.plexus.util.StringUtils;
 import org.eclipse.aether.DefaultRepositorySystemSession;
@@ -164,6 +165,16 @@ public class DefaultProjectDependenciesResolver
             for ( Dependency dependency : depMgmt.getDependencies() )
             {
                 collect.addManagedDependency( RepositoryUtils.toDependency( dependency, stereotypes ) );
+            }
+
+            List<DependencyOverride> dependencyOverrides = depMgmt.getDependencyOverrides();
+            if ( dependencyOverrides != null )
+            {
+                for ( DependencyOverride dependencyOverride : dependencyOverrides )
+                {
+                    collect.addDependencyOverride( RepositoryUtils.toDependencyOverride( dependencyOverride,
+                                                                                         stereotypes ) );
+                }
             }
         }
 

@@ -18,8 +18,12 @@ under the License.
 -->
 
 <project>
-    <modelVersion>4.1.1</modelVersion>
-    <groupId>tests.project</groupId>
-    <artifactId>future-model-version</artifactId>
-    <version>1</version>
+  <modelVersion>4.1.0</modelVersion>
+  <groupId>com.example.group</groupId>
+  <artifactId>good-model-version-4_1_0</artifactId>
+  <version>1</version>
+
+  <description>
+    This will test makes sure that Maven happily works with model version 4.1.0.
+  </description>
 </project>
